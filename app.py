@@ -1,28 +1,41 @@
-import gradio as gr
-import cv2
-import tempfile
-from ultralytics import YOLOv10
+import os
+
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
+import gradio as gr  # noqa: E402
+import cv2  # noqa: E402
+import tempfile  # noqa: E402
+from ultralytics import YOLOv10  # noqa: E402
+
+last_model_id = None
+model = None
 
 
 def yolov10_inference(image, video, model_id, image_size, conf_threshold):
-    model = YOLOv10.from_pretrained(f'jameslahm/{model_id}')
+    global last_model_id, model
+    if last_model_id is None or last_model_id != model_id:
+        if model_id == "custom":
+            model = YOLOv10("runs/detect/train/weights/best.pt")
+        else:
+            model = YOLOv10.from_pretrained(f"jameslahm/{model_id}", cache_dir="./models")
+    last_model_id = model_id
     if image:
         results = model.predict(source=image, imgsz=image_size, conf=conf_threshold)
         annotated_image = results[0].plot()
         return annotated_image[:, :, ::-1], None
     else:
-        video_path = tempfile.mktemp(suffix=".webm")
-        with open(video_path, "wb") as f:
-            with open(video, "rb") as g:
-                f.write(g.read())
+        # video_path = tempfile.mktemp(suffix=".mp4")
+        # with open(video_path, "wb") as f:
+        #    with open(video, "rb") as g:
+        #        f.write(g.read())
 
-        cap = cv2.VideoCapture(video_path)
+        cap = cv2.VideoCapture(video)
         fps = cap.get(cv2.CAP_PROP_FPS)
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        output_video_path = tempfile.mktemp(suffix=".webm")
-        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'vp80'), fps, (frame_width, frame_height))
+        output_video_path = tempfile.mktemp(suffix=".mp4")
+        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*"avc1"), fps, (frame_width, frame_height))
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -49,7 +62,7 @@ def app():
         with gr.Row():
             with gr.Column():
                 image = gr.Image(type="pil", label="Image", visible=True)
-                video = gr.Video(label="Video", visible=False)
+                video = gr.Video(label="Video", visible=False, format="mp4")
                 input_type = gr.Radio(
                     choices=["Image", "Video"],
                     value="Image",
@@ -64,8 +77,9 @@ def app():
                         "yolov10b",
                         "yolov10l",
                         "yolov10x",
+                        "custom",
                     ],
-                    value="yolov10m",
+                    value="custom",
                 )
                 image_size = gr.Slider(
                     label="Image Size",
@@ -107,7 +121,6 @@ def app():
             else:
                 return yolov10_inference(None, video, model_id, image_size, conf_threshold)
 
-
         yolov10_infer.click(
             fn=run_inference,
             inputs=[image, video, model_id, image_size, conf_threshold, input_type],
@@ -137,8 +150,9 @@ def app():
                 conf_threshold,
             ],
             outputs=[output_image],
-            cache_examples='lazy',
+            cache_examples="lazy",
         )
+
 
 gradio_app = gr.Blocks()
 with gradio_app:
@@ -147,15 +161,17 @@ with gradio_app:
     <h1 style='text-align: center'>
     YOLOv10: Real-Time End-to-End Object Detection
     </h1>
-    """)
+    """
+    )
     gr.HTML(
         """
         <h3 style='text-align: center'>
         <a href='https://arxiv.org/abs/2405.14458' target='_blank'>arXiv</a> | <a href='https://github.com/THU-MIG/yolov10' target='_blank'>github</a>
         </h3>
-        """)
+        """
+    )
     with gr.Row():
         with gr.Column():
             app()
-if __name__ == '__main__':
+if __name__ == "__main__":
     gradio_app.launch()
