@@ -34,8 +34,8 @@ def yolov10_inference(image, video, model_id, image_size, conf_threshold):
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        output_video_path = tempfile.mktemp(suffix=".mp4")
-        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*"avc1"), fps, (frame_width, frame_height))
+        output_video_path = "output.mp4"
+        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (frame_width, frame_height))
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -99,7 +99,7 @@ def app():
 
             with gr.Column():
                 output_image = gr.Image(type="numpy", label="Annotated Image", visible=True)
-                output_video = gr.Video(label="Annotated Video", visible=False)
+                output_video = gr.Video(label="Annotated Video", visible=False, format="mp4")
 
         def update_visibility(input_type):
             image = gr.update(visible=True) if input_type == "Image" else gr.update(visible=False)
