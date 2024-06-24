@@ -1,10 +1,11 @@
 import os
 
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["PATH"] = "/usr/bin" + os.pathsep + os.environ["PATH"]
 
 import gradio as gr  # noqa: E402
 import cv2  # noqa: E402
-import tempfile  # noqa: E402
+import ffmpeg  # noqa: E402
 from ultralytics import YOLOv10  # noqa: E402
 
 last_model_id = None
@@ -24,10 +25,10 @@ def yolov10_inference(image, video, model_id, image_size, conf_threshold):
         annotated_image = results[0].plot()
         return annotated_image[:, :, ::-1], None
     else:
-        # video_path = tempfile.mktemp(suffix=".mp4")
-        # with open(video_path, "wb") as f:
-        #    with open(video, "rb") as g:
-        #        f.write(g.read())
+        video_path = "input.mp4"
+        with open(video_path, "wb") as f:
+            with open(video, "rb") as g:
+                f.write(g.read())
 
         cap = cv2.VideoCapture(video)
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -35,7 +36,15 @@ def yolov10_inference(image, video, model_id, image_size, conf_threshold):
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         output_video_path = "output.mp4"
-        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (frame_width, frame_height))
+
+        process = (
+            ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24", s=f"{frame_width}x{frame_height}")
+            .output(output_video_path, vcodec="libx265", pix_fmt="yuv420p", r=fps)
+            .overwrite_output()
+            .run_async(pipe_stdin=True)
+        )
+
+        # out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*"hvc1"), fps, (frame_width, frame_height))
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -44,10 +53,12 @@ def yolov10_inference(image, video, model_id, image_size, conf_threshold):
 
             results = model.predict(source=frame, imgsz=image_size, conf=conf_threshold)
             annotated_frame = results[0].plot()
-            out.write(annotated_frame)
+            process.stdin.write(annotated_frame.tobytes())
+            # out.write(annotated_frame)
 
         cap.release()
-        out.release()
+        process.stdin.close()
+        # out.release()
 
         return None, output_video_path
 
