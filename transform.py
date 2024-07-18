@@ -89,7 +89,7 @@ def process_files(directory):
             lines = file.readlines()
 
         # 转换每一行
-        converted_lines = [convert_label(line) for line in lines]
+        converted_lines = [convert_label(line) + "\n" for line in lines]
 
         # 将转换后的内容写回文件
         with open(filepath, "w") as file:
