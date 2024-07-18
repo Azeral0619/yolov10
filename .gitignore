@@ -174,3 +174,7 @@ gradio_cached*
 .locks
 
 *.pt
+*.cache
+*.mp4
+*.webm
+data

@@ -121,11 +121,13 @@ class BasePredictor:
         """
         not_tensor = not isinstance(im, torch.Tensor)
         if not_tensor:
-            im = np.stack(self.pre_transform(im))
-            im = im[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW, (n, 3, h, w)
+            im = [cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) for image in self.pre_transform(im)]
+            im = np.stack(im)[:, None, :, :]
+            # im = im[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW, (n, 3, h, w)
             im = np.ascontiguousarray(im)  # contiguous
             im = torch.from_numpy(im)
-
+        else:
+            im = im.mean(dim=1, keepdim=True)
         im = im.to(self.device)
         im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
         if not_tensor:
@@ -225,7 +227,9 @@ class BasePredictor:
 
             # Warmup model
             if not self.done_warmup:
-                self.model.warmup(imgsz=(1 if self.model.pt or self.model.triton else self.dataset.bs, 3, *self.imgsz))
+                # TODO: CHANGE
+                self.model.warmup(imgsz=(1 if self.model.pt or self.model.triton else self.dataset.bs, 1, *self.imgsz))
+                # self.model.warmup(imgsz=(1 if self.model.pt or self.model.triton else self.dataset.bs, 3, *self.imgsz))
                 self.done_warmup = True
 
             self.seen, self.windows, self.batch = 0, [], None

@@ -16,7 +16,7 @@ def yolov10_inference(image, video, model_id, image_size, conf_threshold):
     global last_model_id, model
     if last_model_id is None or last_model_id != model_id:
         if model_id == "custom":
-            model = YOLOv10("runs/detect/train/weights/best.pt")
+            model = YOLOv10("runs/detect/train2/weights/best.pt")
         else:
             model = YOLOv10.from_pretrained(f"jameslahm/{model_id}", cache_dir="./models")
     last_model_id = model_id
@@ -35,16 +35,16 @@ def yolov10_inference(image, video, model_id, image_size, conf_threshold):
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        output_video_path = "output.mp4"
+        output_video_path = "output.webm"
 
-        process = (
-            ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24", s=f"{frame_width}x{frame_height}")
-            .output(output_video_path, vcodec="libx265", pix_fmt="yuv420p", r=fps)
-            .overwrite_output()
-            .run_async(pipe_stdin=True)
-        )
+        # process = (
+        #    ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24", s=f"{frame_width}x{frame_height}")
+        #    .output(output_video_path, vcodec="libx265", pix_fmt="yuv420p", r=fps)
+        #    .overwrite_output()
+        #    .run_async(pipe_stdin=True)
+        # )
 
-        # out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*"hvc1"), fps, (frame_width, frame_height))
+        out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*"vp80"), fps, (frame_width, frame_height))
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -53,17 +53,17 @@ def yolov10_inference(image, video, model_id, image_size, conf_threshold):
 
             results = model.predict(source=frame, imgsz=image_size, conf=conf_threshold)
             annotated_frame = results[0].plot()
-            process.stdin.write(annotated_frame.tobytes())
-            # out.write(annotated_frame)
+            # process.stdin.write(annotated_frame.tobytes())
+            out.write(annotated_frame)
 
         cap.release()
-        process.stdin.close()
-        # out.release()
+        # process.stdin.close()
+        out.release()
 
         return None, output_video_path
 
 
-def yolov10_inference_for_examples(image, model_path, image_size, conf_threshold):
+def yolov10_inference_for_examples(image, model_path, image_size, conf_threshold):  #
     annotated_image, _ = yolov10_inference(image, None, model_path, image_size, conf_threshold)
     return annotated_image
 

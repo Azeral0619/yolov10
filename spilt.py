@@ -1,37 +1,35 @@
 import os
-import shutil
 import random
 
-ratio = 0.1
-img_dir = "data/keyframes"  # 图片路径
-label_dir = "data/Labels"  # 生成的yolo格式的数据存放路径
-train_img_dir = "data/images/train2017"  # 训练集图片的存放路径
-val_img_dir = "data/images/val2017"
-train_label_dir = "data/labels/train2017"  # 训练集yolo格式数据的存放路径
-val_label_dir = "data/labels/val2017"
-if not os.path.exists(train_img_dir):
-    os.makedirs(train_img_dir)
-if not os.path.exists(val_img_dir):
-    os.makedirs(val_img_dir)
-if not os.path.exists(train_label_dir):
-    os.makedirs(train_label_dir)
-if not os.path.exists(val_label_dir):
-    os.makedirs(val_label_dir)
-names = os.listdir(img_dir)
-val_names = random.sample(names, int(len(names) * ratio))
 
-cnt_1 = 0
-cnt_2 = 0
-for name in names:
-    if name in val_names:
-        # cnt_1+=1
-        # if cnt_1>100:
-        # break
-        shutil.copy(os.path.join(img_dir, name), os.path.join(val_img_dir, name))
-        shutil.copy(os.path.join(label_dir, name[:-4] + ".txt"), os.path.join(val_label_dir, name[:-4] + ".txt"))
-    else:
-        # cnt_2+=1
-        # if cnt_2>1000:
-        # break
-        shutil.copy(os.path.join(img_dir, name), os.path.join(train_img_dir, name))
-        shutil.copy(os.path.join(label_dir, name[:-4] + ".txt"), os.path.join(train_label_dir, name[:-4] + ".txt"))
+ratio = 0.2
+label_dir = "data/labels"  # 生成的yolo格式的数据存放路径
+image_dir = "data/images"
+
+# 获取所有标签文件名
+files = os.listdir(label_dir)
+random.seed(0)
+# 打乱文件顺序
+random.shuffle(files)
+
+# 计算验证集的大小
+val_size = int(len(files) * ratio)
+
+# 分割文件名为训练集和验证集
+val_files = files[:val_size]
+train_files = files[val_size:]
+
+
+# 定义写入文件路径的函数
+def write_file(file_list, filename, image_dir):
+    with open(filename, "w") as f:
+        for file in file_list:
+            # 替换标签文件扩展名为图像文件扩展名
+            image_file = file.replace(".txt", ".jpg")
+            f.write(os.path.join(image_dir, image_file) + "\n")
+
+
+# 写入train.txt, val.txt, all.txt
+write_file(train_files, "data/train.txt", image_dir)
+write_file(val_files, "data/val.txt", image_dir)
+write_file(files, "data/all.txt", image_dir)

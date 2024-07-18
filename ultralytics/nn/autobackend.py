@@ -238,6 +238,9 @@ class AutoBackend(nn.Module):
             output_names = []
             fp16 = False  # default updated below
             dynamic = False
+
+            # FIXME: deprecated, use new API
+            """
             for i in range(model.num_bindings):
                 name = model.get_binding_name(i)
                 dtype = trt.nptype(model.get_binding_dtype(i))
@@ -250,6 +253,20 @@ class AutoBackend(nn.Module):
                 else:  # output
                     output_names.append(name)
                 shape = tuple(context.get_binding_shape(i))
+                im = torch.from_numpy(np.empty(shape, dtype=dtype)).to(device)
+                bindings[name] = Binding(name, dtype, shape, im, int(im.data_ptr()))
+            """
+            for name in model:
+                dtype = trt.nptype(model.get_tensor_dtype(name))
+                if model.get_tensor_mode(name) == trt.TensorIOMode.INPUT:
+                    if -1 in tuple(model.get_tensor_shape(name)):  # dynamic
+                        dynamic = True
+                        context.set_tensor_shape(name, tuple(model.get_profile_shape(0, name)[2]))
+                    if dtype == np.float16:
+                        fp16 = True
+                else:  # output
+                    output_names.append(name)
+                shape = tuple(context.get_tensor_shape(name))
                 im = torch.from_numpy(np.empty(shape, dtype=dtype)).to(device)
                 bindings[name] = Binding(name, dtype, shape, im, int(im.data_ptr()))
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
@@ -574,7 +591,8 @@ class AutoBackend(nn.Module):
         """
         return torch.tensor(x).to(self.device) if isinstance(x, np.ndarray) else x
 
-    def warmup(self, imgsz=(1, 3, 640, 640)):
+    # CHANGE: imgsz=(1, 3, 640, 640)
+    def warmup(self, imgsz=(1, 1, 640, 640)):
         """
         Warm up the model by running one forward pass with a dummy input.
 

@@ -270,7 +270,9 @@ class BaseModel(nn.Module):
         """
         if not hasattr(self, "criterion"):
             self.criterion = self.init_criterion()
-
+        # TODO: CHANGE
+        # import ipdb;ipdb.set_trace()
+        batch['img'] = batch['img'][:,:1,:,:]
         preds = self.forward(batch["img"]) if preds is None else preds
         return self.criterion(preds, batch)
 

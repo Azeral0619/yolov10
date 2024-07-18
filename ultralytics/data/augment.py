@@ -670,6 +670,12 @@ class RandomFlip:
         if self.direction == "vertical" and random.random() < self.p:
             img = np.flipud(img)
             instances.flipud(h)
+            for i in range(labels["cls"].shape[0]):
+                if labels["cls"][i] == 6:
+                    labels["cls"][i] = 9
+                elif labels["cls"][i] == 9:
+                    labels["cls"][i] = 6
+
         if self.direction == "horizontal" and random.random() < self.p:
             img = np.fliplr(img)
             instances.fliplr(w)
@@ -953,7 +959,7 @@ class Format:
             img = np.expand_dims(img, -1)
         img = img.transpose(2, 0, 1)
         img = np.ascontiguousarray(img[::-1] if random.uniform(0, 1) > self.bgr else img)
-        img = torch.from_numpy(img)
+        img = torch.from_numpy(img.copy())
         return img
 
     def _format_segments(self, instances, cls, w, h):
@@ -968,6 +974,19 @@ class Format:
             masks = polygons2masks((h, w), segments, color=1, downsample_ratio=self.mask_ratio)
 
         return masks, instances, cls
+
+
+class ToGrayScale:
+    """Custom transform to convert images to grayscale."""
+
+    def __init__(self):
+        pass
+
+    def __call__(self, labels):
+        labels["img"] = cv2.cvtColor(labels["img"], cv2.COLOR_BGR2GRAY)
+        # Convert grayscale image back to 3 channels by stacking the grayscale image along depth
+        # gray_image_3channel = cv2.cvtColor(gray_image, cv2.COLOR_GRAY2BGR)
+        return labels
 
 
 def v8_transforms(dataset, imgsz, hyp, stretch=False):
@@ -1000,7 +1019,9 @@ def v8_transforms(dataset, imgsz, hyp, stretch=False):
             pre_transform,
             MixUp(dataset, pre_transform=pre_transform, p=hyp.mixup),
             Albumentations(p=1.0),
-            RandomHSV(hgain=hyp.hsv_h, sgain=hyp.hsv_s, vgain=hyp.hsv_v),
+            # TODO: TRAIN Grey Scale Image
+            # RandomHSV(hgain=hyp.hsv_h, sgain=hyp.hsv_s, vgain=hyp.hsv_v),
+            ToGrayScale(),
             RandomFlip(direction="vertical", p=hyp.flipud),
             RandomFlip(direction="horizontal", p=hyp.fliplr, flip_idx=flip_idx),
         ]
