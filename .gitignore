@@ -177,4 +177,4 @@ gradio_cached*
 *.cache
 *.mp4
 *.webm
-data
+data/
