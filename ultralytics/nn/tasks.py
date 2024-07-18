@@ -53,11 +53,18 @@ from ultralytics.nn.modules import (
     PSA,
     SCDown,
     RepVGGDW,
-    v10Detect
+    v10Detect,
 )
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
-from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss, v10DetectLoss
+from ultralytics.utils.loss import (
+    v8ClassificationLoss,
+    v8DetectionLoss,
+    v8OBBLoss,
+    v8PoseLoss,
+    v8SegmentationLoss,
+    v10DetectLoss,
+)
 from ultralytics.utils.plotting import feature_visualization
 from ultralytics.utils.torch_utils import (
     fuse_conv_and_bn,
@@ -270,9 +277,11 @@ class BaseModel(nn.Module):
         """
         if not hasattr(self, "criterion"):
             self.criterion = self.init_criterion()
+
         # TODO: CHANGE
         # import ipdb;ipdb.set_trace()
-        batch['img'] = batch['img'][:,:1,:,:]
+        # batch['img'] = batch['img'][:,:1,:,:]
+
         preds = self.forward(batch["img"]) if preds is None else preds
         return self.criterion(preds, batch)
 
@@ -643,9 +652,11 @@ class WorldModel(DetectionModel):
                     return torch.unbind(torch.cat(embeddings, 1), dim=0)
         return x
 
+
 class YOLOv10DetectionModel(DetectionModel):
     def init_criterion(self):
         return v10DetectLoss(self)
+
 
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""
@@ -890,7 +901,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             RepC3,
             PSA,
             SCDown,
-            C2fCIB
+            C2fCIB,
         }:
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)

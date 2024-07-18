@@ -32,42 +32,9 @@ original_labels = {
 
 # 定义新数据集的标签
 new_labels = {
-    0: "0",
-    1: "1",
-    2: "2",
-    3: "3",
-    4: "4",
-    5: "5",
-    6: "6",
-    7: "7",
-    8: "8",
-    9: "9",
-    10: "A",
-    11: "B",
-    12: "C",
-    13: "D",
-    14: "E",
-    15: "F",
-    16: "G",
-    17: "H",
-    18: "I",
-    19: "J",
-    20: "K",
-    21: "L",
-    22: "M",
-    23: "N",
-    24: "O",
-    25: "P",
-    26: "Q",
-    27: "R",
-    28: "S",
-    29: "T",
-    30: "U",
-    31: "V",
-    32: "W",
-    33: "X",
-    34: "Y",
-    35: "Z",
+    0: "1",
+    1: "2",
+    2: "3",
 }
 
 
@@ -77,7 +44,11 @@ label_mapping = {value: key for key, value in new_labels.items()}
 def convert_label(original_label_line):
     parts = original_label_line.split()
     original_label = int(parts[0])
-    new_label = label_mapping[original_labels[original_label]]
+    if str(original_label) in label_mapping.keys():
+        new_label = label_mapping[original_labels[original_label]]
+    else:
+        new_label = 3
+    print(original_label, new_label)
     parts[0] = str(new_label)
     return " ".join(parts)
 
