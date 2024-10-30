@@ -8,4 +8,4 @@ from ultralytics import YOLOv10
 # or
 model = YOLOv10("ultralytics/cfg/models/v10/yolov10n.yaml")
 
-model.train(data="mydataset.yaml", epochs=500, batch=16, imgsz=640)
+model.train(data="data/dataset.yaml", epochs=500, batch=64, imgsz=640)
