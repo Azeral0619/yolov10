@@ -51,10 +51,11 @@ label_mapping = {value: key for key, value in new_labels.items()}
 def convert_label(original_label_line):
     parts = original_label_line.split()
     original_label = int(parts[0])
-    if original_label in label_mapping.keys():
+    if str(original_label) in label_mapping.keys():
         new_label = label_mapping[original_labels[original_label]]
     else:
         new_label = 10
+    print(original_label, new_label)
     parts[0] = str(new_label)
     return " ".join(parts)
 

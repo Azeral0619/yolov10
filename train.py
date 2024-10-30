@@ -6,6 +6,7 @@ from ultralytics import YOLOv10
 # model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
 # model = YOLOv10("yolov10n.pt")
 # or
-model = YOLOv10("ultralytics/cfg/models/v10/yolov10n.yaml")
+# model = YOLOv10("ultralytics/cfg/models/v10/yolov10n.yaml")
+model = YOLOv10("runs/detect/train3/weights/last.pt")
 
-model.train(data="data/dataset.yaml", epochs=500, batch=64, imgsz=640)
+model.train(resume=True,data="data/dataset_x.yaml", epochs=500, batch=64, imgsz=640)
